@@ -1,1 +1,16 @@
 # TeslaTwools
+
+#### Speedrunning Tools for Teslagrad 2
+Yes, it's just a demo right now, but I'm willing to bet that the save file format won't change too much by the time it goes retail. 
+
+### Features:
+* Automatically reads the save file.
+* Detects save slot creation and deletion.
+* Parses and diffs save contents with the previous checkpoint, displaying new events as they occur.
+* Displays realtime playtime, calculated from save slot creation.
+
+### How to use:
+Run it and play Teslagrad 2. The window will update automatically as game events are recorded to the save file.
+
+### Ideas for future improvements:
+* Split capture: Given a list of events, record the playtime when each event is achieved.
