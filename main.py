@@ -5,6 +5,9 @@ import threading
 import yaml
 import tkinter as tk
 from pathlib import Path
+from yaml.parser import ParserError
+
+version = "1.1.1"
 
 
 class FileWatcher(threading.Thread):
@@ -38,8 +41,13 @@ class FileWatcher(threading.Thread):
         # The save file has updated
         self.prev_mtime = mtime
         # Read the YAML save file
-        with self.save_path.open('rt', encoding='utf-8') as save:
-            all_saves = yaml.safe_load(save)
+        try:
+            with self.save_path.open('rt', encoding='utf-8') as save:
+                all_saves = yaml.safe_load(save)
+        # If parsing the YAML fails, abandon the current cycle. It will retry on the next loop.
+        except ParserError:
+            print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}] YAML Parser Error!")
+            return
         # Prepare new window frames
         new_sd_frame = tk.Frame(self.window)
         new_ac_frame = None
@@ -189,4 +197,5 @@ def main():
 
 
 if __name__ == '__main__':
+    print(f"TeslaTwools version {version}")
     main()

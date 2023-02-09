@@ -1,4 +1,4 @@
-# TeslaTwools
+# TeslaTwools 1.1.1
 
 #### Speedrunning Tools for Teslagrad 2
 Yes, it's just a demo right now, but I'm willing to bet that the save file format won't change too much by the time it goes retail. 
@@ -16,3 +16,10 @@ Run it and play Teslagrad 2. The window will update automatically as game events
 ### Ideas for future improvements:
 * Split capture: Given a list of events, record the playtime when each event is achieved.
 * Save file editor.
+
+#### Version History:
+1.1.1: Caught YAML parsing exception.
+
+1.1.0: Added historical activity log.
+
+1.0.0: Save file parsing and diffing. Realtime playtime.
