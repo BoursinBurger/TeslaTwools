@@ -7,17 +7,17 @@ import tkinter as tk
 from pathlib import Path
 from yaml.parser import ParserError
 
-version = "1.1.1"
+version = "1.1.2"
 
 
 class FileWatcher(threading.Thread):
-    save_path = (Path(os.getenv('APPDATA')) / '../LocalLow/Rain/Teslagrad 2/Saves.yaml').resolve()
-    refresh_delay_secs = 0.1
 
     def __init__(self, tk_root):
         threading.Thread.__init__(self)
         self.window = tk_root
-        self.window.title("TeslaTwools")
+        self.window.title(f"TeslaTwools v{version}")
+        self.save_path = (Path(os.getenv('APPDATA')) / '../LocalLow/Rain/Teslagrad 2/Saves.yaml').resolve()
+        self.refresh_delay_secs = 0.1
         self.save_data_frame = tk.Frame(self.window)
         self.activity_frame = tk.Frame(self.window)
         self.font = "Arial 12"
@@ -35,11 +35,19 @@ class FileWatcher(threading.Thread):
             f"[{self.real_playtime if self.real_playtime is not None else self.time_spent}] {activity}")
 
     def watch(self):
+        # If the save file does not exist, terminate the watch loop
+        if not self.save_path.exists():
+            label_msg = tk.Label(self.window, font=self.font,
+                                 text=f"Error: Teslagrad 2 save file not found at\n{str(self.save_path)}")
+            label_msg.pack()
+            self.loop_active = False
+            return
+
+        # Check the modified time on the save file. If the save file has not updated, abort this watch loop.
         mtime = os.stat(self.save_path).st_mtime
         if mtime == self.prev_mtime:
             return
-        # The save file has updated
-        self.prev_mtime = mtime
+
         # Read the YAML save file
         try:
             with self.save_path.open('rt', encoding='utf-8') as save:
@@ -48,6 +56,7 @@ class FileWatcher(threading.Thread):
         except ParserError:
             print(f"[{datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}] YAML Parser Error!")
             return
+
         # Prepare new window frames
         new_sd_frame = tk.Frame(self.window)
         new_ac_frame = None
@@ -56,10 +65,10 @@ class FileWatcher(threading.Thread):
             # First time the save file has been read
             label_msg = tk.Label(new_sd_frame, font=self.font, width=50,
                                  text="Teslagrad 2 Save Data Loaded!")
-            label_msg.pack(anchor="w")
+            label_msg.pack()
             label_msg2 = tk.Label(new_sd_frame, font=self.font, width=50,
                                   text="You may now play Teslagrad 2")
-            label_msg2.pack(anchor="w")
+            label_msg2.pack()
         else:
             # Find the difference between the previous and current save files
             prev_save_list = self.prev_save.get("saveDataSlots")
@@ -165,6 +174,7 @@ class FileWatcher(threading.Thread):
                         activity_textbox.pack()
 
                         break
+
         # Replace the old frames with the new ones
         self.save_data_frame.destroy()
         self.save_data_frame = new_sd_frame
@@ -173,7 +183,9 @@ class FileWatcher(threading.Thread):
             self.activity_frame.destroy()
             self.activity_frame = new_ac_frame
             self.activity_frame.pack(fill="y", expand=True, padx=0, pady=0, side=tk.RIGHT)
-        # Update the cached save data
+
+        # Update the cached save data and last modified time of the save file
+        self.prev_mtime = mtime
         self.prev_save = all_saves
 
     def run(self):
@@ -190,6 +202,7 @@ class FileWatcher(threading.Thread):
 
 
 def main():
+    print(f"TeslaTwools version {version}")
     window = tk.Tk()
     watcher = FileWatcher(window)
     window.mainloop()
@@ -197,5 +210,4 @@ def main():
 
 
 if __name__ == '__main__':
-    print(f"TeslaTwools version {version}")
     main()

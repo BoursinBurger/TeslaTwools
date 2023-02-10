@@ -1,4 +1,4 @@
-# TeslaTwools 1.1.1
+# TeslaTwools 1.1.2
 
 #### Speedrunning Tools for Teslagrad 2
 Yes, it's just a demo right now, but I'm willing to bet that the save file format won't change too much by the time it goes retail. 
@@ -18,6 +18,8 @@ Run it and play Teslagrad 2. The window will update automatically as game events
 * Save file editor.
 
 #### Version History:
+1.1.2: Renamed main.py to TeslaTwools.py and set up exe build. Watcher now aborts if save file does not exist.
+
 1.1.1: Caught YAML parsing exception.
 
 1.1.0: Added historical activity log.
