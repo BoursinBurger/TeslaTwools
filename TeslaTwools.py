@@ -1,3 +1,4 @@
+import csv
 import os
 import time
 import datetime
@@ -14,7 +15,10 @@ class FileWatcher(threading.Thread):
     def __init__(self, ui):
         threading.Thread.__init__(self)
         self.ui = ui
-        self.save_path = (Path(os.getenv('APPDATA')) / '../LocalLow/Rain/Teslagrad 2/Saves.yaml').resolve()
+        self.tesla_2_path = (Path(os.getenv('APPDATA')) / '../LocalLow/Rain/Teslagrad 2').resolve()
+        self.save_path = (self.tesla_2_path / 'Saves.yaml').resolve()
+        self.file_watcher_path = (self.tesla_2_path /
+                                  (datetime.datetime.now().strftime('File_Watcher_%Y%m%d_%H%M%S.log')))
         self.refresh_delay_secs = 0.1
         self.loop_active = True
         self.prev_mtime = 0
@@ -70,6 +74,9 @@ class FileWatcher(threading.Thread):
                 self.active_slot_number = active_slot_count
                 self.activity_log = list()
                 self.state = States.SAVE_SLOT_ADDED
+                self.file_watcher_path = (self.tesla_2_path /
+                                          (datetime.datetime.now().strftime('File_Watcher_%Y%m%d_%H%M%S.log')))
+                self.activity_log.append(f"New Game started at {self.start_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')}")
 
             elif active_slot_count < prev_slot_count:
                 # A save slot was deleted, but which one?
@@ -78,6 +85,8 @@ class FileWatcher(threading.Thread):
                         self.active_slot_number = index + 1
                         self.activity_log = list()
                         self.state = States.SAVE_SLOT_DELETED
+                        self.file_watcher_path = (self.tesla_2_path /
+                                                  (datetime.datetime.now().strftime('File_Watcher_%Y%m%d_%H%M%S.log')))
                         break
 
             else:
@@ -86,6 +95,7 @@ class FileWatcher(threading.Thread):
                 for index, save_data in enumerate(active_save_list):
                     prev_save_data = prev_save_list[index]
                     if save_data != prev_save_data:
+                        new_events = list()
                         self.active_slot_data = save_data
                         self.prev_slot_data = prev_save_data
                         self.time_spent = datetime.timedelta(seconds=save_data.get('timeSpent'))
@@ -94,16 +104,18 @@ class FileWatcher(threading.Thread):
                             self.real_playtime = save_data.get('dateModified') - self.start_datetime
 
                         # Compare the rest of the keys to see if any have been changed, added, or removed
-                        ignored_keys = {"name", "dateModified", "timeSpent", "respawnFacingRight", "respawnPoint"}
+                        ignored_keys = {"dateModified", "timeSpent", "respawnFacingRight"}
                         list_keys = {"triggersSet", "mapShapesUnlocked", "activitiesUnlocked", "scrollsPickedUp",
                                      "scrollsSeenInCollection", "savedCharges", "savedResetInfos"}
                         # For non-list keys, simply display 'key: value'
-                        non_list_keys = set(save_data.keys()) - ignored_keys - list_keys
+                        non_list_keys = set(save_data.keys()) - list_keys
                         for key in non_list_keys:
                             active_value = save_data.get(key)
                             prev_value = prev_save_data.get(key)
                             if active_value != prev_value:
-                                self.log_activity(f"{key}: {active_value}")
+                                new_events.append({key: str(active_value)})
+                                if key not in ignored_keys:
+                                    self.log_activity(f"{key}: {active_value}")
                         # For list keys, display the series of values that have been added to or removed from the list
                         for key in list_keys:
                             active_key_items = set(save_data.get(key))
@@ -114,9 +126,32 @@ class FileWatcher(threading.Thread):
                                 if items_added:
                                     for item in items_added:
                                         self.log_activity(f"{key}: +{item}")
+                                        new_events.append({key: item})
                                 if items_removed:
                                     for item in items_removed:
                                         self.log_activity(f"{key}: -{item}")
+                        # Check the splits tracker and see if a split was triggered
+                        if self.ui.tracker_active:
+                            _, _, split_key, split_value = self.ui.tracker_next_split.values()
+                            for event in new_events:
+                                if split_key in event.keys() and event.get(split_key).lower() == split_value.lower():
+                                    self.log_activity(f"Split '{split_key}: {split_value}' Completed")
+                                    self.ui.advance_splits_tracker(self)
+                                    if self.ui.tracker_completed:
+                                        self.log_activity(f"All Splits Completed")
+                                        if self.ui.save_run.get() == 1:
+                                            completed_splits_path = (self.tesla_2_path /
+                                                                     (datetime.datetime.now().strftime(
+                                                                              'Completed_Run_%Y%m%d_%H%M%S.log')))
+                                            with completed_splits_path.open('w') as run_log:
+                                                csv_writer = csv.writer(run_log, delimiter=',', lineterminator='\n')
+                                                for iid in self.ui.tv_tracker.get_children():
+                                                    row = self.ui.tv_tracker.item(iid).get('values')
+                                                    csv_writer.writerow(row)
+
+                        if self.ui.save_log.get() == 1:
+                            with self.file_watcher_path.open('w') as file_watcher_log:
+                                file_watcher_log.writelines('\n'.join(self.activity_log))
                         break
 
         # Update the cached save data and last modified time of the save file
@@ -141,6 +176,7 @@ def main():
     print(f"TeslaTwools version {VERSION}")
     app = TeslaTwoolsUI()
     watcher = FileWatcher(app)
+    app.save_directory = watcher.tesla_2_path
     app.run()
     watcher.stop()
 
