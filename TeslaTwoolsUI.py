@@ -29,6 +29,7 @@ class TeslaTwoolsUI:
         self.label_next_split = None
         self.frame_non_list_keys = None
         self.frame_list_keys = None
+        self.frame_dict_keys = None
         self.frame_activity_log = None
         self.activity_textbox = None
         self.activity_scroll = None
@@ -178,6 +179,7 @@ class TeslaTwoolsUI:
                     self.label_next_split = ttk.Label(self.frame_game_state, font=self.font, anchor="se")
                     self.frame_non_list_keys = ttk.Frame(self.frame_game_state)
                     self.frame_list_keys = ttk.Frame(self.frame_game_state)
+                    self.frame_dict_keys = ttk.Frame(self.frame_game_state)
                     self.frame_activity_log = ttk.Frame(self.frame_filewatcher, height=200)
 
                     self.activity_textbox = tk.Text(self.frame_activity_log, height=9)
@@ -192,6 +194,7 @@ class TeslaTwoolsUI:
                     self.label_realtime.pack(anchor="w", padx=5)
                     self.frame_non_list_keys.pack(anchor="w")
                     self.frame_list_keys.pack(anchor="w")
+                    self.frame_dict_keys.pack(anchor="w")
                     self.label_next_split.pack(side=tk.BOTTOM, fill="x", padx=5)
                     self.frame_game_state.pack(fill="both", anchor="n", expand=True, side=tk.TOP)
                     self.activity_scroll.pack(side=tk.RIGHT, fill='y')
@@ -219,22 +222,24 @@ class TeslaTwoolsUI:
                     widgets.destroy()
                 for widgets in self.frame_list_keys.winfo_children():
                     widgets.destroy()
+                for widgets in self.frame_dict_keys.winfo_children():
+                    widgets.destroy()
 
                 # Compare the rest of the keys to see if any have been changed, added, or removed
-                ignored_keys = {"name", "dateModified", "timeSpent", "respawnFacingRight", "respawnPoint"}
+                ignored_keys = {"name", "dateModified", "timeSpent", "respawnFacingRight", "respawnPoint, respawnScene"}
                 list_keys = {"triggersSet", "mapShapesUnlocked", "activitiesUnlocked", "scrollsPickedUp",
-                             "scrollsSeenInCollection", "savedCharges", "savedResetInfos"}
+                             "scrollsSeenInCollection", "savedResetInfos"}
+                list_dict_keys = {"savedCharges"}
 
                 # For non-list keys, simply display 'key: value'
-                non_list_keys = set(file_watcher.active_slot_data.keys()) - ignored_keys - list_keys
+                non_list_keys = set(file_watcher.active_slot_data.keys()) - ignored_keys - list_keys - list_dict_keys
                 for key in non_list_keys:
                     active_value = file_watcher.active_slot_data.get(key)
                     prev_value = file_watcher.prev_slot_data.get(key)
                     if active_value != prev_value:
-                        if key != "respawnScene":
-                            label_non_list = ttk.Label(self.frame_non_list_keys, font=self.font, anchor="w",
-                                                       text=f"{key}: {active_value}")
-                            label_non_list.pack(anchor="w", padx=5)
+                        label_non_list = ttk.Label(self.frame_non_list_keys, font=self.font, anchor="w",
+                                                   text=f"{key}: {active_value}")
+                        label_non_list.pack(anchor="w", padx=5)
 
                 # For list keys, display the list name underlined, then display the series of values
                 # that have been added to or removed from the list
@@ -257,6 +262,27 @@ class TeslaTwoolsUI:
                                 label_list_remove = ttk.Label(self.frame_list_keys, font=self.font, anchor="w",
                                                               text=f"    Removed: {str(item)}")
                                 label_list_remove.pack(anchor="w", padx=5)
+                # For list-of-dictionary keys, display the key name underlined, then display the series of dictionary
+                # entries that were added or removed
+                for key in list_dict_keys:
+                    active_dict_items = file_watcher.active_slot_data.get(key)
+                    prev_dict_items = file_watcher.prev_slot_data.get(key)
+                    dicts_added = [i for i in active_dict_items if i not in prev_dict_items]
+                    dicts_removed = [i for i in prev_dict_items if i not in active_dict_items]
+                    if dicts_added or dicts_removed:
+                        label_dict = ttk.Label(self.frame_dict_keys, font=f"{self.font} underline", anchor="w",
+                                               text=f"{key}")
+                        label_dict.pack(anchor="w", padx=5)
+                        if dicts_added:
+                            for dict_item in dicts_added:
+                                label_dict_add = ttk.Label(self.frame_dict_keys, font=self.font, anchor="w",
+                                                           text=f"    Added: {str(dict_item)}")
+                                label_dict_add.pack(anchor="w", padx=5)
+                        if dicts_removed:
+                            for dict_item in dicts_removed:
+                                label_dict_remove = ttk.Label(self.frame_dict_keys, font=self.font, anchor="w",
+                                                              text=f"    Removed: {str(dict_item)}")
+                                label_dict_remove.pack(anchor="w", padx=5)
 
                 # Update the activity textbox
                 self.activity_textbox.config(state=tk.NORMAL)
@@ -358,7 +384,7 @@ class TeslaTwoolsUI:
                              initialdir=self.save_directory,
                              filetypes=[("CSV Files", "*.csv"), ("All Files", "*.*")])
         # Export splits as CSV to the file
-        csv_writer = csv.writer(file, delimiter=',', lineterminator='\n')
+        csv_writer = csv.writer(file, delimiter='|', lineterminator='\n')
         for iid in self.tv_editor.get_children():
             row = self.tv_editor.item(iid).get('values')
             csv_writer.writerow(row)
@@ -387,7 +413,7 @@ class TeslaTwoolsUI:
         # Overwrite Treeview with CSV data
         for row in self.tv_editor.get_children():
             self.tv_editor.delete(row)
-        csv_reader = csv.reader(file, delimiter=',')
+        csv_reader = csv.reader(file, delimiter='|')
         for row in csv_reader:
             self.tv_editor.insert('', tk.END, values=row)
         self.reset_splits_tracker()

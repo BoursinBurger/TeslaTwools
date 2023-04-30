@@ -106,9 +106,10 @@ class FileWatcher(threading.Thread):
                         # Compare the rest of the keys to see if any have been changed, added, or removed
                         ignored_keys = {"dateModified", "timeSpent", "respawnFacingRight"}
                         list_keys = {"triggersSet", "mapShapesUnlocked", "activitiesUnlocked", "scrollsPickedUp",
-                                     "scrollsSeenInCollection", "savedCharges", "savedResetInfos"}
+                                     "scrollsSeenInCollection", "savedResetInfos"}
+                        list_dict_keys = {"savedCharges"}
                         # For non-list keys, simply display 'key: value'
-                        non_list_keys = set(save_data.keys()) - list_keys
+                        non_list_keys = set(save_data.keys()) - list_keys - list_dict_keys
                         for key in non_list_keys:
                             active_value = save_data.get(key)
                             prev_value = prev_save_data.get(key)
@@ -130,6 +131,21 @@ class FileWatcher(threading.Thread):
                                 if items_removed:
                                     for item in items_removed:
                                         self.log_activity(f"{key}: -{item}")
+                        # For list-of-dictionary keys, display the dictionary entries that were added or removed
+                        for key in list_dict_keys:
+                            active_dict_items = save_data.get(key)
+                            prev_dict_items = prev_save_data.get(key)
+                            dicts_added = [i for i in active_dict_items if i not in prev_dict_items]
+                            dicts_removed = [i for i in prev_dict_items if i not in active_dict_items]
+                            if dicts_added or dicts_removed:
+                                if dicts_added:
+                                    for dict_item in dicts_added:
+                                        self.log_activity(f"{key}: +{str(dict_item)}")
+                                        new_events.append({key: str(dict_item)})
+                                if dicts_removed:
+                                    for dict_item in dicts_removed:
+                                        self.log_activity(f"{key}: -{str(dict_item)}")
+
                         # Check the splits tracker and see if a split was triggered
                         if self.ui.tracker_active:
                             _, _, split_key, split_value = self.ui.tracker_next_split.values()
@@ -144,7 +160,7 @@ class FileWatcher(threading.Thread):
                                                                      (datetime.datetime.now().strftime(
                                                                               'Completed_Run_%Y%m%d_%H%M%S.log')))
                                             with completed_splits_path.open('w') as run_log:
-                                                csv_writer = csv.writer(run_log, delimiter=',', lineterminator='\n')
+                                                csv_writer = csv.writer(run_log, delimiter='|', lineterminator='\n')
                                                 for iid in self.ui.tv_tracker.get_children():
                                                     row = self.ui.tv_tracker.item(iid).get('values')
                                                     csv_writer.writerow(row)

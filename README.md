@@ -11,14 +11,44 @@
 * Create, Edit, Save, and Load sets of Splits, which will be tracked as you play.
 * Ability to save logs of File Watcher and Completed Splits to the Teslagrad 2 Save directory. 
 
-### How to use:
+### How to use the File Watcher:
 Run it and play Teslagrad 2. The window will update automatically as game events are recorded to the save file.
+
+### How to use the Splits Editor:
+Splits are checked when new items are added to the save file, or existing items are updated. The splits checker is case-insensitive. There are three types of data in the file. Here's how to create splits for them:
+
+####  Key-Value Items
+These are the simplest. When adding a new split, set the Split Event to the key and the Split Value to the value. Examples:
+
+| Split Event           | Split Value    |
+|:----------------------|:---------------|
+| blinkUnlocked         | true           |
+| respawnScene          | Viking Hilltop |
+| hulderBossfightBeaten | true           |
+
+#### List Items
+Several save attributes accumulate items underneath them. These include: triggersSet, mapShapesUnlocked, and scrollsPickedUp. When adding a new split, set the Split Event to the attribute and the Split Value to the item added. Examples:
+
+| Split Event       | Split Value                                 |
+|:------------------|:--------------------------------------------|
+| triggersSet       | HulderJumpscare1                            |
+| mapShapesUnlocked | Uncover_Now you are thinking with Magnets 1 |
+| scrollsPickedUp   | 14                                          |
+
+#### Dictionary Items
+The savedCharges attribute keeps a list of dictionaries, each dictionary holding charge metadata. When adding a new split, set the Split Event to savedCharges and write a Python Dictionary holding the metadata for the Split Value. Example:
+
+| Split Event  | Split Value                                                        |
+|:-------------|:-------------------------------------------------------------------|
+| savedCharges | {'saveID': 'Attractor-Teleporter--146440836', 'charge': 'Neutral'} |
 
 ### Ideas for future improvements:
 * Save file editor. Example edit ideas: Change Respawn Point, Ability / Scroll / Boss collection flags, Reveal map.
 
 
 #### Version History:
+1.2.2: Fixed a crash when savedCharges is updated in the save file.
+
 1.2.1: Fully implemented Splits tab. Splits can be created, edited, saved, and loaded. Splits are tracked and connected to File Watcher. Added checkboxes to save Activity Log and Completed Splits.   
 
 1.2: UI Redesign. Separated File Watcher and UI into separate classes. Split Add/Edit/Delete UI is functional, but not yet hooked into File Watcher.
