@@ -1,6 +1,6 @@
 from enum import Enum, auto
 
-VERSION = "1.2.2"
+VERSION = "1.3"
 
 
 class States(Enum):
@@ -10,6 +10,7 @@ class States(Enum):
     SAVE_SLOT_ADDED = auto()
     SAVE_SLOT_DELETED = auto()
     SAVE_SLOT_UPDATED = auto()
+    SAVE_FILE_EDITED = auto()
     UNCHANGED = auto()
 
 

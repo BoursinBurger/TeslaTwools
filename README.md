@@ -2,20 +2,26 @@
 
 #### Speedrunning Tools for Teslagrad 2
 
-### Features:
+## Features:
+#### File Watcher
 * Automatically reads the save file.
 * Detects save slot creation and deletion.
 * Parses and diffs save contents with the previous checkpoint, displaying new events as they occur.
 * Keeps a historical timestamped log of events. 
-* Displays realtime playtime, calculated from save slot creation.
+* Displays realtime playtime, calculated from save slot creation timestamp.
+#### Splits Editor & Tracker
 * Create, Edit, Save, and Load sets of Splits, which will be tracked as you play.
-* Ability to save logs of File Watcher and Completed Splits to the Teslagrad 2 Save directory. 
+* Ability to save logs of File Watcher and Completed Splits to the Teslagrad 2 Save directory.
+#### Save Editor
+* Save Slot selector gives an overview of progress for all save slots at a glance.
+* Modify a save slot's collected Equipment, defeated Bosses, explored Map Sections, collected Scrolls, triggered Triggers, and the Scene of Lumina's current location.
+* Save updates to the save file, and be able to tell if there are unsaved changes.
 
 ### How to use the File Watcher:
 Run it and play Teslagrad 2. The window will update automatically as game events are recorded to the save file.
 
 ### How to use the Splits Editor:
-Splits are checked when new items are added to the save file, or existing items are updated. The splits checker is case-insensitive. There are three types of data in the file. Here's how to create splits for them:
+Splits are checked when new items are added to the save file, or existing items are updated. Splits are NOT checked when an item is removed. (It doesn't happen very often anyway.) Split times prioritize realtime playtime first, then in-game playtime if realtime is not available. The splits checker is case-insensitive. There are three types of data in the save file. Here's how to create splits for them:
 
 ####  Key-Value Items
 These are the simplest. When adding a new split, set the Split Event to the key and the Split Value to the value. Examples:
@@ -43,10 +49,15 @@ The savedCharges attribute keeps a list of dictionaries, each dictionary holding
 | savedCharges | {'saveID': 'Attractor-Teleporter--146440836', 'charge': 'Neutral'} |
 
 ### Ideas for future improvements:
-* Save file editor. Example edit ideas: Change Respawn Point, Ability / Scroll / Boss collection flags, Reveal map.
-
+* Hotkey trigger for LiveSplit.
+* Dropdown selection and typing with autocomplete for Splits events.
+* Support for Randomizer save file generation
 
 #### Version History:
+1.3: Fully implemented the Save Editor. Added a Teslagrad2Data module to hold game-specific metadata, and created classes for the Save File and its list of Save Slots. Refactored the entire program to leverage these class objects. Added the deepdiff package to easily diff save objects with each other. Substituted the PyYAML package for ruamel.yaml due to some difficulties in writing the save file in Teslagrad 2's YAML format and the need to apply a transformation after string serialization.
+
+1.2.3: Added Retry button when save file is not found.
+
 1.2.2: Fixed a crash when savedCharges is updated in the save file.
 
 1.2.1: Fully implemented Splits tab. Splits can be created, edited, saved, and loaded. Splits are tracked and connected to File Watcher. Added checkboxes to save Activity Log and Completed Splits.   
@@ -61,4 +72,4 @@ The savedCharges attribute keeps a list of dictionaries, each dictionary holding
 
 1.1: Added historical activity log.
 
-1.0.0: Save file parsing and diffing. Realtime playtime.
+1.0: Save file parsing and diffing. Realtime playtime.
