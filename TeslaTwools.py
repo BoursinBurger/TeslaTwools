@@ -2,6 +2,7 @@ import os
 import csv
 import time
 import threading
+import livesplit
 from pathlib import Path
 from deepdiff import DeepDiff
 from datetime import datetime, timedelta
@@ -36,11 +37,31 @@ class FileWatcher(threading.Thread):
         self.time_spent = None
         self.activity_log = list()
         self.state = States.INITIALIZED
+        self.livesplit_connection = None
         self.start()
 
     def log_activity(self, activity):
         self.activity_log.append(
             f"[{self.real_playtime if self.real_playtime is not None else self.time_spent}] {activity}")
+
+    def livesplit_connect(self):
+        self.livesplit_connection = livesplit.Livesplit()
+
+    def livesplit_disconnect(self):
+        self.livesplit_connection = None
+
+    def livesplit_start(self):
+        if self.livesplit_connection is not None:
+            self.livesplit_connection.startTimer()
+            self.livesplit_connection.startGameTimer()
+
+    def livesplit_split(self):
+        if self.livesplit_connection is not None:
+            self.livesplit_connection.split()
+
+    def livesplit_reset(self):
+        if self.livesplit_connection is not None:
+            self.livesplit_connection.reset()
 
     def watch(self):
         # If the save file does not exist, terminate the watch loop
@@ -61,6 +82,8 @@ class FileWatcher(threading.Thread):
             # Update the cached save data and last modified time of the save file
             self.prev_mtime = mtime
             self.prev_save_file = self.active_save_file
+            # Reset the livesplit run
+            self.livesplit_reset()
             return
 
         # Read the YAML save file
@@ -84,6 +107,9 @@ class FileWatcher(threading.Thread):
                 self.file_watcher_path = (self.tesla_2_path /
                                           (datetime.now().strftime('File_Watcher_%Y%m%d_%H%M%S.log')))
                 self.activity_log.append(f"New Game started at {self.start_datetime.strftime('%Y-%m-%d %H:%M:%S.%f')}")
+                # Reset and start the livesplit run
+                self.livesplit_reset()
+                self.livesplit_start()
 
             elif active_slot_count < prev_slot_count:
                 # A save slot was deleted, but which one?
@@ -94,6 +120,8 @@ class FileWatcher(threading.Thread):
                         self.state = States.SAVE_SLOT_DELETED
                         self.file_watcher_path = (self.tesla_2_path /
                                                   (datetime.now().strftime('File_Watcher_%Y%m%d_%H%M%S.log')))
+                        # Reset the livesplit run
+                        self.livesplit_reset()
                         break
 
             else:
@@ -153,8 +181,13 @@ class FileWatcher(threading.Thread):
                                     if type(event_value) is str and split_value.lower() == event_value.lower() or type(
                                             event_value) is list and split_value.lower() in (string.lower() for string
                                                                                              in event_value):
+                                        # Send a split to livesplit
+                                        self.livesplit_split()
+                                        # Log the split
                                         self.log_activity(f"Split '{split_key}: {split_value}' Completed")
+                                        # Move to the next split in the UI
                                         self.ui.advance_splits_tracker(self)
+                                        # Check if we are finished tracking splits
                                         if self.ui.tracker_completed:
                                             self.log_activity(f"All Splits Completed")
                                             if self.ui.save_run.get() == 1:

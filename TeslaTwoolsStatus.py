@@ -1,6 +1,6 @@
 from enum import Enum, auto
 
-VERSION = "1.3"
+VERSION = "1.3.1"
 
 
 class States(Enum):

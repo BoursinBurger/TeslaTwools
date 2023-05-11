@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Union, Any
 
 
+# Class object representing a save slot within the save file
 class SaveSlot:
     version: float = 1.6
     name: str = "Slot"
@@ -50,6 +51,7 @@ class SaveSlot:
     savedResetInfos: List[Any] = list()
     gameWasCompletedOnce: bool = False
 
+    # If initiated with a dictionary, set the object's properties to those of the dictionary, otherwise use the defaults
     def __init__(self, save_slot_dict: Dict[str, Any] = None):
         if save_slot_dict:
             for k, v in save_slot_dict.items():
@@ -57,6 +59,7 @@ class SaveSlot:
         else:
             self.dateModified = datetime.now(timezone.utc).astimezone()
 
+    # Helper functions for querying the equipment booleans
     def equipment(self):
         return (self.blinkUnlocked, self.cloakUnlocked, self.waterblinkUnlocked, self.powerSlideUnlocked,
                 self.mjolnirUnlocked, self.axeUnlocked, self.mapUnlocked, self.redCloakUnlocked,
@@ -65,6 +68,7 @@ class SaveSlot:
     def equipment_count(self):
         return self.equipment().count(True)
 
+    # Helper functions for querying the boss booleans
     def bosses(self):
         return (self.hulderBossfightBeaten, self.mooseBossFightBeaten, self.fafnirBossFightBeaten,
                 self.halvtannBossFightBeaten, self.galvanBossFightBeaten, self.trollMiniBossFightBeaten)
@@ -72,6 +76,7 @@ class SaveSlot:
     def boss_count(self):
         return self.bosses().count(True)
 
+    # Exports the class object to a dictionary as preparation for serializing the save file to YAML
     def export(self):
         return {
             "version": self.version,
@@ -126,16 +131,18 @@ class SaveSlot:
         }
 
 
+# Class object representing the save file: a list of SaveSlot objects with saveDataSlots as a dictionary header
 class SaveFile:
     saveDataSlots: List[SaveSlot] = list()
     save_file_path = (Path(os.getenv('APPDATA')) / '../LocalLow/Rain/Teslagrad 2/Saves.yaml').resolve()
 
+    # Initialize the class object with a list of SaveSlot objects, or leave the list of SaveSlots empty
     def __init__(self, save_slot_list: List[SaveSlot] = None):
         if save_slot_list:
             self.saveDataSlots = save_slot_list
 
+    # Read the YAML save file
     def read(self):
-        # Read the YAML save file
         yaml = ruamel.yaml.YAML()
         with self.save_file_path.open('rt', encoding='utf-8') as save:
             save_file_dict = yaml.load(save)
@@ -144,6 +151,8 @@ class SaveFile:
         for save_dict in save_list:
             self.saveDataSlots.append(SaveSlot(save_dict))
 
+    # Correct the integrity of the save file when equipment and boss flags do not match the associated pin triggers
+    # And when collected scrolls do not match their respective map shapes
     def checksum(self):
         for slot in self.saveDataSlots:
 
@@ -176,6 +185,7 @@ class SaveFile:
                 if scroll not in slot.scrollsPickedUp and scroll in slot.mapShapesUnlocked:
                     slot.mapShapesUnlocked = [item for item in slot.mapShapesUnlocked if scroll != item]
 
+    # Overwrite the save file with the contents of the updated class objects
     def write(self):
         # Correct any inconsistent save data
         self.checksum()
@@ -475,6 +485,7 @@ scrolls = (
     81
 )
 
+# Set of values for placing the checkboxes on the scroll chooser image canvas
 scroll_image_coordinates = ((3663, 2356),  # Scroll 1
                             (4599, 2038),  # Scroll 2
                             (2962, 2706),  # Scroll 3
@@ -852,6 +863,7 @@ triggers = (
     "rClimbAreaDoor"
 )
 
+# Set of values for respawnScene and respawnPoint
 scenes = {
     "Lumina Landed": {'x': -37.6993103, 'y': -167.896393},
     "Viking Hilltop": {'x': -20.3301716, 'y': -163.364365},

@@ -9,9 +9,13 @@
 * Parses and diffs save contents with the previous checkpoint, displaying new events as they occur.
 * Keeps a historical timestamped log of events. 
 * Displays realtime playtime, calculated from save slot creation timestamp.
+
 #### Splits Editor & Tracker
 * Create, Edit, Save, and Load sets of Splits, which will be tracked as you play.
+* Dropdown selection and typing with autocomplete for Splits events/values.
 * Ability to save logs of File Watcher and Completed Splits to the Teslagrad 2 Save directory.
+* Ability to communicate with LiveSplit Server and send Start, Reset, and Split commands respectively when a save slot is added, removed, or a split event is detected.
+
 #### Save Editor
 * Save Slot selector gives an overview of progress for all save slots at a glance.
 * Modify a save slot's collected Equipment, defeated Bosses, explored Map Sections, collected Scrolls, triggered Triggers, and the Scene of Lumina's current location.
@@ -48,12 +52,21 @@ The savedCharges attribute keeps a list of dictionaries, each dictionary holding
 |:-------------|:-------------------------------------------------------------------|
 | savedCharges | {'saveID': 'Attractor-Teleporter--146440836', 'charge': 'Neutral'} |
 
+#### Interfacing with LiveSplit Server
+* Download LiveSplit Server: https://github.com/LiveSplit/LiveSplit.Server
+* Install it in your LiveSplit installation's Components directory.
+* Open LiveSplit.
+* Right-Click your LiveSplit window, choose Edit Layout and add LiveSplit Server under the Control category.
+* Right-Click your LiveSplit window and go to Control → Start Server.
+* Select the "Interface with LiveSplit Server" checkbox in TeslaTwools' Splits tab.
+
 ### Ideas for future improvements:
-* Hotkey trigger for LiveSplit.
-* Dropdown selection and typing with autocomplete for Splits events.
-* Support for Randomizer save file generation
+* Support for Randomizer save file generation.
+
 
 #### Version History:
+1.3.1: Added support for LiveSplit Server: sends Start, Reset, and Split commands respectively when a save slot is added, removed, or a split event is detected. Added dropdown selection and typing with autocomplete for Splits events/values.
+
 1.3: Fully implemented the Save Editor. Added a Teslagrad2Data module to hold game-specific metadata, and created classes for the Save File and its list of Save Slots. Refactored the entire program to leverage these class objects. Added the deepdiff package to easily diff save objects with each other. Substituted the PyYAML package for ruamel.yaml due to some difficulties in writing the save file in Teslagrad 2's YAML format and the need to apply a transformation after string serialization.
 
 1.2.3: Added Retry button when save file is not found.

@@ -2,6 +2,7 @@
 import os
 import sys
 import csv
+import itertools
 import tkinter as tk
 import tkinter.ttk as ttk
 from tkinter.messagebox import showwarning, askyesnocancel
@@ -113,24 +114,31 @@ class TeslaTwoolsUI:
         self.tv_tracker.heading("tracker_id", anchor=tk.W, text='#')
         self.tv_tracker.heading("tracker_event", anchor=tk.W, text='Event')
         self.tv_tracker.heading("tracker_time", anchor=tk.W, text='Time')
-        self.tv_tracker.grid(column=0, padx=5, pady=10, row=0)
+        self.tv_tracker.grid(column=0, row=0, padx=5, pady=10)
         self.save_log = tk.IntVar()
         self.checkbutton_save_log = ttk.Checkbutton(self.labelframe_tracker)
         self.checkbutton_save_log.configure(text='Save File Watcher events to a log file', variable=self.save_log)
-        self.checkbutton_save_log.grid(column=0, pady=10, row=1)
+        self.checkbutton_save_log.grid(column=0, row=1, padx=10, sticky=tk.W)
         self.save_run = tk.IntVar()
         self.checkbutton_save_run = ttk.Checkbutton(self.labelframe_tracker)
         self.checkbutton_save_run.configure(text='Save logs of completed splits', variable=self.save_run)
-        self.checkbutton_save_run.grid(column=0, pady=10, row=2)
+        self.checkbutton_save_run.grid(column=0, row=2, padx=10, pady=5, sticky=tk.W)
+        self.livesplit_enabled = tk.IntVar()
+        self.checkbutton_livesplit = ttk.Checkbutton(self.labelframe_tracker)
+        self.checkbutton_livesplit.configure(text='Interface with LiveSplit Server', variable=self.livesplit_enabled,
+                                             command=self.livesplit_toggle)
+        self.checkbutton_livesplit.grid(column=0, row=3, padx=10, sticky=tk.W)
         self.labelframe_tracker.pack(expand=False, fill=tk.Y, padx=5, pady=5, side=tk.RIGHT)
         self.labelframe_tracker.grid_propagate(False)
 
         # Dialog window elements - Split Editor
         self.split_editor_window = None
         self.label_split_event = None
-        self.entry_split_event = None
+        self.stringvar_split_event = None
+        self.accb_split_event = None
         self.label_split_value = None
-        self.entry_split_value = None
+        self.stringvar_split_value = None
+        self.accb_split_value = None
         self.button_split_ok = None
         self.button_split_cancel = None
         self.button_retry_filewatcher = None
@@ -540,19 +548,37 @@ class TeslaTwoolsUI:
         self.label_split_event = ttk.Label(self.split_editor_window, width=50, text="Select Split Event")
         self.label_split_event.pack(side=tk.TOP, pady=5)
 
-        # Event Entry
-        self.entry_split_event = tk.Entry(self.split_editor_window, width=50)
-        self.entry_split_event.pack(anchor=tk.W, side=tk.TOP, padx=10, pady=5)
-        self.entry_split_event.insert(0, split_event)
+        # Event AutocompleteCombobox
+        self.stringvar_split_event = tk.StringVar(value=split_event)
+        self.accb_split_event = AutocompleteCombobox(self.split_editor_window, width=50)
+        self.accb_split_event.set_completion_list(
+            ("version", "name", "respawnScene", "blinkUnlocked", "cloakUnlocked", "waterblinkUnlocked",
+             "mjolnirUnlocked", "powerSlideUnlocked", "axeUnlocked", "blinkWireAxeUnlocked", "redCloakUnlocked",
+             "omniBlinkUnlocked", "doubleJumpUnlocked", "secretsMapUnlocked", "mapUnlocked", "hasMetGalvan",
+             "hulderBossfightBeaten", "mooseBossFightBeaten", "fafnirBossFightBeaten", "halvtannBossFightBeaten",
+             "galvanBossFightBeaten", "trollMiniBossFightBeaten", "invasionSequenceDone", "vikingBlimpOnTheHunt",
+             "vikingBlimpPosition", "HulderUnderworldChaseProgression", "hulder_PreBossDiscoverTraversed",
+             "hulder_PreBossLevelChaseDone", "hulder_DarkRoomLevelChaseDone", "hulder_GrueEyesLevelChaseDone",
+             "triggersSet", "mapShapesUnlocked", "activitiesUnlocked", "scrollsPickedUp", "scrollsSeenInCollection",
+             "savedCharges", "savedResetInfos", "gameWasCompletedOnce"))
+        self.accb_split_event.configure(textvariable=self.stringvar_split_event)
+        self.accb_split_event.pack(anchor=tk.W, side=tk.TOP, padx=10, pady=5)
 
         # Value Label
         self.label_split_value = ttk.Label(self.split_editor_window, width=50, text="Select Split Value")
         self.label_split_value.pack(side=tk.TOP, pady=5)
-        # Value Entry
-        self.entry_split_value = tk.Entry(self.split_editor_window, width=50)
-        self.entry_split_value.pack(anchor=tk.W, side=tk.TOP, padx=10, pady=5)
-        self.entry_split_value.insert(0, split_value)
-        self.entry_split_value.bind("<Return>", self.split_edit_ok)
+
+        # Value AutocompleteCombobox
+        self.stringvar_split_value = tk.StringVar(value=split_value)
+        self.accb_split_value = AutocompleteCombobox(self.split_editor_window, width=50)
+        self.accb_split_value.set_completion_list(list(itertools.chain(["True", "False"],
+                                                                       list(Teslagrad2Data.map_shapes),
+                                                                       [str(x) for x in Teslagrad2Data.scrolls],
+                                                                       list(Teslagrad2Data.triggers),
+                                                                       list(Teslagrad2Data.scenes.keys()))))
+        self.accb_split_value.configure(textvariable=self.stringvar_split_value)
+        self.accb_split_value.pack(anchor=tk.W, side=tk.TOP, padx=10, pady=5)
+
         # OK and Cancel Buttons
         self.button_split_ok = ttk.Button(self.split_editor_window, width=20,
                                           text="OK", command=self.split_edit_ok)
@@ -566,7 +592,6 @@ class TeslaTwoolsUI:
         self.split_editor_window.wait_visibility()
         self.split_editor_window.focus_force()
         self.split_editor_window.grab_set()
-        self.entry_split_event.focus_set()
         self.split_editor_window.wait_window()
 
     def splits_add(self):
@@ -654,8 +679,8 @@ class TeslaTwoolsUI:
 
     def split_edit_ok(self, _=None):
         # Read the entry attributes
-        split_event = self.entry_split_event.get()
-        split_value = self.entry_split_value.get()
+        split_event = self.stringvar_split_event.get()
+        split_value = self.stringvar_split_value.get()
 
         # If either split entry was blank, complain about it
         if not split_event or not split_value:
@@ -755,6 +780,12 @@ class TeslaTwoolsUI:
             values = self.tv_editor.item(next_editor_iid).get('values')
             self.tracker_next_split = {"tracker": next_tracker_iid, "editor": next_editor_iid,
                                        "event": values[1], "value": values[2]}
+
+    def livesplit_toggle(self):
+        if self.livesplit_enabled.get() == 0:
+            self.file_watcher.livesplit_disconnect()
+        else:
+            self.file_watcher.livesplit_connect()
 
     # UI Functions for Save Editor
     def toggle_save_editor_elements(self, enabled: bool):
@@ -1247,6 +1278,67 @@ class TeslaTwoolsUI:
 
     def scene_cancel(self):
         self.scene_select_window.destroy()
+
+
+class AutocompleteCombobox(ttk.Combobox):
+
+    def __init__(self, master=None, **kw):
+        super(AutocompleteCombobox, self).__init__(master=master, **kw)
+        self._completion_list = None
+        self._hits = None
+        self._hit_index = None
+        self.position = None
+
+    def set_completion_list(self, completion_list):
+        """Use our completion list as our dropdown selection menu, arrows move through menu."""
+        self._completion_list = sorted(completion_list, key=str.lower)  # Work with a sorted list
+        self._hits = []
+        self._hit_index = 0
+        self.position = 0
+        self.bind('<KeyRelease>', self.handle_keyrelease)
+        self['values'] = self._completion_list  # Setup our popup menu
+
+    def autocomplete(self, delta=0):
+        """autocomplete the Combobox, delta may be 0/1/-1 to cycle through possible hits"""
+        if delta:  # need to delete selection otherwise we would fix the current position
+            self.delete(self.position, tk.END)
+        else:  # set position to end so selection starts where textentry ended
+            self.position = len(self.get())
+        # collect hits
+        _hits = []
+        for element in self._completion_list:
+            if element.lower().startswith(self.get().lower()):  # Match case insensitively
+                _hits.append(element)
+        # if we have a new hit list, keep this in mind
+        if _hits != self._hits:
+            self._hit_index = 0
+            self._hits = _hits
+        # only allow cycling if we are in a known hit list
+        if _hits == self._hits and self._hits:
+            self._hit_index = (self._hit_index + delta) % len(self._hits)
+        # now finally perform the autocompletion
+        if self._hits:
+            self.delete(0, tk.END)
+            self.insert(0, self._hits[self._hit_index])
+            self.select_range(self.position, tk.END)
+
+    def handle_keyrelease(self, event):
+        """event handler for the keyrelease event on this widget"""
+        if event.keysym == "BackSpace":
+            self.delete(self.index(tk.INSERT), tk.END)
+            self.position = self.index(tk.END)
+        if event.keysym == "Left":
+            if self.position < self.index(tk.END):  # delete the selection
+                self.delete(self.position, tk.END)
+            else:
+                self.position = self.position - 1  # delete one character
+                self.delete(self.position, tk.END)
+        if event.keysym == "Right":
+            self.position = self.index(tk.END)  # go to end (no selection)
+        if len(event.keysym) == 1:
+            self.autocomplete()
+        # No need for up/down, we'll jump to the popup
+        # list at the position of the autocompletion
 
 
 class ScrollSelector(ttk.Frame):
