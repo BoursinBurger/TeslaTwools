@@ -986,6 +986,7 @@ class TeslaTwoolsUI:
         self.label_map_seen.configure(text=f'Seen: {len(self.save_editor_map)}')
         self.label_scrolls_collected.configure(text=f'Collected: {len(self.save_editor_scrolls)}/81')
         self.label_triggers_triggered.configure(text=f'Triggered: {len(self.save_editor_triggers)}')
+        self.label_chosen_scene.configure(text=f'Current Scene: {self.save_editor_scene}')
         self.display_unsaved_changes()
 
     def slot_ok(self):

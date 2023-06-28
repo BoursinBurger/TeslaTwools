@@ -65,6 +65,8 @@ The savedCharges attribute keeps a list of dictionaries, each dictionary holding
 
 
 #### Version History:
+1.3.2: Set Scene label on save slot load. Added classes for Map, Equipment, Scene, Exit, and Scroll for future use in graph generation and randomizer support. 
+
 1.3.1: Added support for LiveSplit Server: sends Start, Reset, and Split commands respectively when a save slot is added, removed, or a split event is detected. Added dropdown selection and typing with autocomplete for Splits events/values.
 
 1.3: Fully implemented the Save Editor. Added a Teslagrad2Data module to hold game-specific metadata, and created classes for the Save File and its list of Save Slots. Refactored the entire program to leverage these class objects. Added the deepdiff package to easily diff save objects with each other. Substituted the PyYAML package for ruamel.yaml due to some difficulties in writing the save file in Teslagrad 2's YAML format and the need to apply a transformation after string serialization.
